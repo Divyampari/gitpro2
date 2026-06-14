@@ -1,11 +1,502 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>LuxeMarket | Full Stack E-Commerce</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- CORE STYLES --- */
+        :root {
+            --primary: #4a90e2; --secondary: #2c3e50; --accent: #e74c3c;
+            --bg-light: #f4f7f6; --white: #ffffff;
+            --admin-sidebar: #1a202e;
+        }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg-light); color: var(--secondary); overflow-x: hidden; }
+        
+        /* --- LOGIN SCREEN --- */
+        .auth-container {
+            display: flex; height: 100vh; justify-content: center; align-items: center;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+        }
+        .auth-box {
+            background: white; padding: 2rem; border-radius: 10px; width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+        }
+        .auth-box input, .auth-box select {
+            width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;
+        }
+        .btn {
+            background: var(--primary); color: white; border: none; padding: 12px 20px;
+            border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s;
+        }
+        .btn:hover { background: #357abd; }
+        .hidden { display: none !important; }
+
+        /* --- DASHBOARD LAYOUT (ADMIN/STAFF) --- */
+        .dashboard-container { display: flex; height: 100vh; }
+        .sidebar {
+            width: 250px; background: var(--admin-sidebar); color: white;
+            padding: 20px; display: flex; flex-direction: column;
+        }
+        .sidebar h2 { margin-bottom: 30px; text-align: center; color: var(--primary); }
+        .menu-item {
+            padding: 15px; cursor: pointer; color: #b0b8c5; transition: 0.3s;
+        }
+        .menu-item:hover, .menu-item.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid var(--primary); }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        /* --- SHOPPING UI (USER) --- */
+        .shop-header {
+            background: white; padding: 15px 5%; display: flex; justify-content: space-between;
+            align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--secondary); }
+        .logo span { color: var(--primary); }
+        .nav-links { display: flex; gap: 20px; cursor: pointer; }
+        .cart-icon { position: relative; cursor: pointer; }
+        .badge { background: var(--accent); color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.7rem; position: absolute; top: -5px; right: -10px; }
+
+        .hero-section {
+            background: url('https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80') center/cover;
+            height: 400px; display: flex; align-items: center; justify-content: center; color: white; text-align: center;
+        }
+        
+        .products-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding: 2rem 5%;
+        }
+        .product-card {
+            background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: 0.3s;
+        }
+        .product-card:hover { transform: translateY(-5px); }
+        .p-img { height: 250px; width: 100%; object-fit: cover; }
+        .p-info { padding: 15px; }
+        .p-price { color: var(--accent); font-weight: bold; font-size: 1.1rem; }
+
+        /* --- MODALS & FORMS --- */
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: white; width: 500px; padding: 20px; border-radius: 10px; max-height: 90vh; overflow-y: auto;
+        }
+        .close { float: right; cursor: pointer; font-size: 1.5rem; }
+        
+        /* --- REVIEW SECTION --- */
+        .review-box { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; }
+        .star-rating i { color: gold; }
+        
+        /* --- TABLES (ADMIN) --- */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: var(--secondary); color: white; }
+
+        /* --- PAYMENT SIMULATION --- */
+        .payment-form input { margin-bottom: 10px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <h1>heading tag</h1>
+
+    <!-- 1. AUTHENTICATION SECTION -->
+    <section id="auth-section" class="auth-container">
+        <div class="auth-box" id="login-box">
+            <h2>Welcome Back</h2>
+            <p>Login to your account</p>
+            <input type="text" id="login-id" placeholder="Username / UserID">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button class="btn" onclick="handleLogin()">Login</button>
+            <p style="margin-top:10px; font-size:0.9rem;">New User? <a href="#" onclick="toggleAuth()">Register here</a></p>
+        </div>
+
+        <div class="auth-box hidden" id="register-box">
+            <h2>Create Account</h2>
+            <input type="text" id="reg-name" placeholder="Full Name">
+            <input type="text" id="reg-id" placeholder="Choose Username">
+            <input type="password" id="reg-pass" placeholder="Password">
+            <button class="btn" onclick="handleRegister()">Register</button>
+            <p style="margin-top:10px; font-size:0.9rem;">Have account? <a href="#" onclick="toggleAuth()">Login</a></p>
+        </div>
+    </section>
+
+    <!-- 2. ADMIN DASHBOARD -->
+    <section id="admin-dashboard" class="dashboard-container hidden">
+        <div class="sidebar">
+            <h2>Admin Panel</h2>
+            <div class="menu-item active" onclick="switchAdminTab('products')"><i class="fas fa-box"></i> Products</div>
+            <div class="menu-item" onclick="switchAdminTab('staff')"><i class="fas fa-users-cog"></i> Manage Staff</div>
+            <div class="menu-item" onclick="switchAdminTab('orders')"><i class="fas fa-shopping-cart"></i> All Orders</div>
+            <div class="menu-item" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</div>
+        </div>
+        <div class="main-content">
+            <div id="admin-products">
+                <h1>Product Management</h1>
+                <div style="margin: 20px 0; background: white; padding: 20px; border-radius: 8px;">
+                    <h3>Add New Product</h3>
+                    <input type="text" id="new-p-name" placeholder="Product Name" style="padding:8px; width:30%;">
+                    <input type="number" id="new-p-price" placeholder="Price" style="padding:8px; width:20%;">
+                    <select id="new-p-cat" style="padding:8px;"><option>Women</option><option>Men</option><option>Kids</option></select>
+                    <input type="text" id="new-p-img" placeholder="Image URL" style="padding:8px; width:30%;">
+                    <button class="btn" onclick="adminAddProduct()" style="width:100px; margin-top:10px;">Add</button>
+                </div>
+                <table id="admin-p-table">
+                    <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Category</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            
+            <div id="admin-staff" class="hidden">
+                <h1>Staff Management</h1>
+                <div style="margin: 20px 0; background: white; padding: 20px;">
+                    <h3>Create Staff Account</h3>
+                    <input type="text" id="staff-user" placeholder="Staff UserID" style="padding:8px;">
+                    <input type="password" id="staff-pass" placeholder="Password" style="padding:8px;">
+                    <button class="btn" onclick="adminAddStaff()" style="width:150px;">Create Staff</button>
+                </div>
+                <table id="admin-staff-table">
+                    <thead><tr><th>UserID</th><th>Role</th><th>Status</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div id="admin-orders" class="hidden">
+                <h1>All Orders</h1>
+                <table id="admin-order-table">
+                    <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. SHOPPING WEBSITE (USER VIEW) -->
+    <section id="shop-interface" class="hidden">
+        <nav class="shop-header">
+            <div class="logo">Luxe<span>Market</span></div>
+            <div class="nav-links">
+                <span onclick="filterProducts('all')">All</span>
+                <span onclick="filterProducts('Women')">Women</span>
+                <span onclick="filterProducts('Men')">Men</span>
+                <span onclick="filterProducts('Kids')">Kids</span>
+            </div>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <span id="user-display-name" style="font-weight:bold;">User</span>
+                <div class="cart-icon" onclick="openCart()">
+                    <i class="fas fa-shopping-bag" style="font-size:1.5rem;"></i>
+                    <span class="badge" id="cart-count">0</span>
+                </div>
+                <i class="fas fa-sign-out-alt" onclick="logout()" style="cursor:pointer; color: var(--accent);"></i>
+            </div>
+        </nav>
+
+        <div class="hero-section">
+            <div>
+                <h1 style="font-size:3rem; margin-bottom:10px;">New Season Arrivals</h1>
+                <p>Check out all the trends</p>
+            </div>
+        </div>
+
+        <div class="products-grid" id="shop-grid">
+            <!-- Products Loaded Here -->
+        </div>
+    </section>
+
+    <!-- PRODUCT DETAIL MODAL -->
+    <div id="product-modal" class="modal hidden">
+        <div class="modal-content" style="width: 800px; display:flex; gap:20px;">
+            <span class="close" onclick="closeModal('product-modal')">&times;</span>
+            <div style="flex:1;"><img id="modal-img" src="" style="width:100%; border-radius:8px;"></div>
+            <div style="flex:1;">
+                <h2 id="modal-title">Title</h2>
+                <h3 id="modal-price" style="color:var(--accent); margin:10px 0;">$00</h3>
+                <p>Premium quality fabric, designed for elegance and comfort. Perfect for any occasion.</p>
+                <button class="btn" onclick="addToCartFromModal()">Add to Cart</button>
+                
+                <!-- Review Section -->
+                <div class="review-box">
+                    <h4>Reviews & Photos</h4>
+                    <div id="modal-reviews" style="max-height: 150px; overflow-y:auto; margin-bottom:10px;"></div>
+                    
+                    <input type="text" id="review-text" placeholder="Write a review..." style="width:100%; padding:5px; margin-bottom:5px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <input type="file" id="review-photo" accept="image/*" style="font-size:0.8rem;">
+                        <button class="btn" style="width:auto; padding:5px 10px;" onclick="submitReview()">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CART & PAYMENT MODAL -->
+    <div id="cart-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('cart-modal')">&times;</span>
+            <h2>Your Cart</h2>
+            <div id="cart-items" style="margin:20px 0; border-bottom:1px solid #ddd;"></div>
+            <h3>Total: $<span id="cart-total">0</span></h3>
+            <button class="btn" onclick="openPayment()">Checkout</button>
+        </div>
+    </div>
+
+    <div id="payment-modal" class="modal hidden">
+        <div class="modal-content" style="text-align:center;">
+            <h2>Secure Payment</h2>
+            <div class="payment-form" style="text-align:left; margin-top:20px;">
+                <label>Card Number</label>
+                <input type="text" placeholder="0000 0000 0000 0000" maxlength="16">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" placeholder="MM/YY" style="width:50%;">
+                    <input type="text" placeholder="CVV" style="width:50%;">
+                </div>
+            </div>
+            <div id="pay-loader" class="hidden"><div class="spinner"></div><p>Processing...</p></div>
+            <button id="pay-btn" class="btn" onclick="processPayment()">Pay Now</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA SIMULATION ---
+        let users = [
+            { id: 'admin', pass: '1234', role: 'admin', name: 'Super Admin' },
+            { id: 'staff1', pass: '1234', role: 'staff', name: 'John Staff' }
+        ];
+        
+        let products = [
+            { id: 1, name: 'Floral Summer Dress', price: 49, cat: 'Women', img: 'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=500', reviews: [] },
+            { id: 2, name: 'Slim Fit Suit', price: 199, cat: 'Men', img: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=500', reviews: [] },
+            { id: 3, name: 'Kids Denim Jacket', price: 35, cat: 'Kids', img: 'https://images.unsplash.com/photo-1621452773781-0f992ee03591?w=500', reviews: [] },
+            { id: 4, name: 'Evening Gown', price: 120, cat: 'Women', img: 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=500', reviews: [] }
+        ];
+
+        let cart = [];
+        let orders = [];
+        let currentUser = null;
+        let selectedProduct = null;
+
+        // --- AUTH LOGIC ---
+        function toggleAuth() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('register-box').classList.toggle('hidden');
+        }
+
+        function handleLogin() {
+            const id = document.getElementById('login-id').value;
+            const pass = document.getElementById('login-pass').value;
+            const user = users.find(u => u.id === id && u.pass === pass);
+
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-section').classList.add('hidden');
+                
+                if (user.role === 'admin') {
+                    document.getElementById('admin-dashboard').classList.remove('hidden');
+                    loadAdminData();
+                } else if (user.role === 'staff') {
+                    // Reuse admin dashboard but limited (Prototype shortcut)
+                    document.getElementById('admin-dashboard').classList.remove('hidden');
+                    document.querySelector('.sidebar').innerHTML = `<h2>Staff Panel</h2><div class="menu-item active"><i class="fas fa-shopping-cart"></i> Orders</div><div class="menu-item" onclick="logout()">Logout</div>`;
+                    switchAdminTab('orders');
+                } else {
+                    document.getElementById('shop-interface').classList.remove('hidden');
+                    document.getElementById('user-display-name').innerText = user.name;
+                    renderProducts(products);
+                }
+            } else {
+                alert('Invalid Credentials!');
+            }
+        }
+
+        function handleRegister() {
+            const name = document.getElementById('reg-name').value;
+            const id = document.getElementById('reg-id').value;
+            const pass = document.getElementById('reg-pass').value;
+            if(users.find(u => u.id === id)) return alert('Username taken');
+            
+            users.push({ id, pass, role: 'user', name });
+            alert('Registered! Please login.');
+            toggleAuth();
+        }
+
+        function logout() {
+            location.reload(); // Simple session clear
+        }
+
+        // --- ADMIN FUNCTIONS ---
+        function switchAdminTab(tab) {
+            document.getElementById('admin-products').classList.add('hidden');
+            document.getElementById('admin-staff').classList.add('hidden');
+            document.getElementById('admin-orders').classList.add('hidden');
+            document.getElementById('admin-' + tab).classList.remove('hidden');
+            
+            // Update active sidebar
+            document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function loadAdminData() {
+            // Load Products
+            const pTable = document.querySelector('#admin-p-table tbody');
+            pTable.innerHTML = products.map(p => `<tr><td>${p.id}</td><td>${p.name}</td><td>$${p.price}</td><td>${p.cat}</td><td><button onclick="deleteProduct(${p.id})">Del</button></td></tr>`).join('');
+            
+            // Load Staff
+            const sTable = document.querySelector('#admin-staff-table tbody');
+            const staffList = users.filter(u => u.role === 'staff');
+            sTable.innerHTML = staffList.map(u => `<tr><td>${u.id}</td><td>${u.role}</td><td style="color:green">Active</td></tr>`).join('');
+
+            // Load Orders
+            renderOrders();
+        }
+
+        function adminAddProduct() {
+            const name = document.getElementById('new-p-name').value;
+            const price = document.getElementById('new-p-price').value;
+            const cat = document.getElementById('new-p-cat').value;
+            const img = document.getElementById('new-p-img').value;
+            
+            products.push({ id: Date.now(), name, price, cat, img, reviews: [] });
+            loadAdminData();
+            alert('Product Added');
+        }
+
+        function adminAddStaff() {
+            const id = document.getElementById('staff-user').value;
+            const pass = document.getElementById('staff-pass').value;
+            users.push({ id, pass, role: 'staff', name: 'Staff Member' });
+            loadAdminData();
+            alert('Staff Account Created');
+        }
+
+        function renderOrders() {
+            const oTable = document.querySelector('#admin-order-table tbody');
+            oTable.innerHTML = orders.map(o => `<tr><td>#${o.id}</td><td>${o.user}</td><td>$${o.total}</td><td style="color:green">Paid</td></tr>`).join('');
+        }
+
+        // --- SHOPPING LOGIC ---
+        function renderProducts(list) {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = list.map(p => `
+                <div class="product-card">
+                    <img src="${p.img}" class="p-img" onclick="openProductModal(${p.id})">
+                    <div class="p-info">
+                        <h3>${p.name}</h3>
+                        <div class="p-price">$${p.price}</div>
+                        <button class="btn" style="margin-top:10px;" onclick="addToCart(${p.id})">Add to Cart</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterProducts(cat) {
+            if (cat === 'all') renderProducts(products);
+            else renderProducts(products.filter(p => p.cat === cat));
+        }
+
+        function openProductModal(id) {
+            selectedProduct = products.find(p => p.id === id);
+            document.getElementById('modal-img').src = selectedProduct.img;
+            document.getElementById('modal-title').innerText = selectedProduct.name;
+            document.getElementById('modal-price').innerText = '$' + selectedProduct.price;
+            renderReviews();
+            document.getElementById('product-modal').classList.remove('hidden');
+        }
+
+        function addToCart(id) {
+            const p = products.find(x => x.id === id);
+            cart.push(p);
+            updateCartUI();
+        }
+        function addToCartFromModal() {
+            if(selectedProduct) {
+                cart.push(selectedProduct);
+                updateCartUI();
+                closeModal('product-modal');
+            }
+        }
+
+        function updateCartUI() {
+            document.getElementById('cart-count').innerText = cart.length;
+        }
+
+        function openCart() {
+            const container = document.getElementById('cart-items');
+            if(cart.length === 0) container.innerHTML = "<p>Cart is empty</p>";
+            else container.innerHTML = cart.map(item => `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${item.name}</span><span>$${item.price}</span></div>`).join('');
+            
+            const total = cart.reduce((sum, item) => sum + parseInt(item.price), 0);
+            document.getElementById('cart-total').innerText = total;
+            document.getElementById('cart-modal').classList.remove('hidden');
+        }
+
+        // --- REVIEWS & PHOTO UPLOAD ---
+        function renderReviews() {
+            const container = document.getElementById('modal-reviews');
+            if(selectedProduct.reviews.length === 0) container.innerHTML = "<p style='color:#777'>No reviews yet.</p>";
+            else {
+                container.innerHTML = selectedProduct.reviews.map(r => `
+                    <div style="border-bottom:1px solid #eee; padding:5px;">
+                        <strong>${r.user}</strong>: ${r.text}
+                        ${r.img ? `<br><img src="${r.img}" style="width:50px; height:50px; margin-top:5px; border-radius:4px;">` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+
+        function submitReview() {
+            const text = document.getElementById('review-text').value;
+            const fileInput = document.getElementById('review-photo');
+            
+            if(!text) return alert("Write something!");
+
+            const reviewObj = { user: currentUser.name, text: text, img: null };
+
+            if(fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    reviewObj.img = e.target.result; // Base64 image simulation
+                    selectedProduct.reviews.push(reviewObj);
+                    renderReviews();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                selectedProduct.reviews.push(reviewObj);
+                renderReviews();
+            }
+            document.getElementById('review-text').value = "";
+        }
+
+        // --- PAYMENT & MODALS ---
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
+        function openPayment() {
+            closeModal('cart-modal');
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        function processPayment() {
+            document.getElementById('pay-btn').classList.add('hidden');
+            document.getElementById('pay-loader').classList.remove('hidden');
+            
+            setTimeout(() => {
+                const total = cart.reduce((sum, item) => sum + parseInt(item.price), 0);
+                orders.push({ id: Date.now(), user: currentUser.name, total: total });
+                cart = [];
+                updateCartUI();
+                
+                document.getElementById('pay-loader').classList.add('hidden');
+                document.getElementById('payment-modal').classList.add('hidden');
+                document.getElementById('pay-btn').classList.remove('hidden');
+                
+                alert('Payment Successful! Order Booking Confirmed.');
+                
+                // If current user is admin/staff viewing shop, update order table instantly
+                if(currentUser.role !== 'user') renderOrders();
+            }, 2000); // 2 second delay for realism
+        }
+    </script>
 </body>
 </html>
