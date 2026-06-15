@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Clone Project</title>
+
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#eaeded;
+}
+
+/* Navbar */
+
+.navbar{
+background:#131921;
+color:white;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:15px 30px;
+position:sticky;
+top:0;
+z-index:1000;
+}
+
+.logo{
+font-size:28px;
+font-weight:bold;
+color:#ff9900;
+}
+
+.search-box{
+width:50%;
+padding:10px;
+border:none;
+border-radius:5px;
+font-size:16px;
+}
+
+.cart{
+font-size:20px;
+font-weight:bold;
+}
+
+/* Hero */
+
+.hero{
+height:350px;
+background:url("https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600")
+center/cover;
+display:flex;
+align-items:center;
+justify-content:center;
+color:white;
+text-align:center;
+}
+
+.hero h1{
+font-size:50px;
+background:rgba(0,0,0,.5);
+padding:20px;
+border-radius:10px;
+}
+
+/* Categories */
+
+.categories{
+display:flex;
+justify-content:center;
+gap:20px;
+padding:30px;
+flex-wrap:wrap;
+}
+
+.category{
+background:white;
+padding:15px 30px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+transition:.3s;
+}
+
+.category:hover{
+background:#ff9900;
+color:white;
+}
+
+/* Products */
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:25px;
+padding:30px;
+}
+
+.card{
+background:white;
+border-radius:12px;
+overflow:hidden;
+box-shadow:0 5px 15px rgba(0,0,0,.1);
+transition:.3s;
+}
+
+.card:hover{
+transform:translateY(-8px);
+}
+
+.card img{
+width:100%;
+height:220px;
+object-fit:cover;
+}
+
+.card-content{
+padding:15px;
+}
+
+.card h3{
+margin-bottom:10px;
+}
+
+.price{
+color:#e63946;
+font-size:20px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+button{
+width:100%;
+padding:10px;
+background:#ff9900;
+border:none;
+color:white;
+font-weight:bold;
+cursor:pointer;
+border-radius:5px;
+}
+
+button:hover{
+background:#e68a00;
+}
+
+/* Footer */
+
+footer{
+background:#131921;
+color:white;
+text-align:center;
+padding:20px;
+margin-top:30px;
+}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+function App(){
+
+const [cart,setCart]=React.useState(0);
+const [search,setSearch]=React.useState("");
+const [category,setCategory]=React.useState("All");
+
+const products=[
+{
+id:1,
+name:"Laptop",
+price:49999,
+category:"Electronics",
+image:"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500"
+},
+{
+id:2,
+name:"Smart Watch",
+price:6999,
+category:"Electronics",
+image:"https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500"
+},
+{
+id:3,
+name:"Headphones",
+price:2999,
+category:"Electronics",
+image:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500"
+},
+{
+id:4,
+name:"Men Jacket",
+price:2499,
+category:"Fashion",
+image:"https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=500"
+},
+{
+id:5,
+name:"Women Dress",
+price:1999,
+category:"Fashion",
+image:"https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=500"
+},
+{
+id:6,
+name:"Shoes",
+price:3499,
+category:"Fashion",
+image:"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500"
+}
+];
+
+const addToCart=()=>{
+setCart(cart+1);
+};
+
+const filteredProducts=products.filter(product=>{
+const matchSearch=product.name.toLowerCase().includes(search.toLowerCase());
+
+const matchCategory=
+category==="All" ||
+product.category===category;
+
+return matchSearch && matchCategory;
+});
+
+return(
+<>
+<nav className="navbar">
+<div className="logo">AmazonClone</div>
+
+<input
+className="search-box"
+placeholder="Search products..."
+value={search}
+onChange={(e)=>setSearch(e.target.value)}
+/>
+
+<div className="cart">
+🛒 {cart}
+</div>
+</nav>
+
+<section className="hero">
+<h1>Amazon Style Ecommerce Project</h1>
+</section>
+
+<div className="categories">
+<div className="category" onClick={()=>setCategory("All")}>
+All
+</div>
+
+<div className="category" onClick={()=>setCategory("Electronics")}>
+Electronics
+</div>
+
+<div className="category" onClick={()=>setCategory("Fashion")}>
+Fashion
+</div>
+</div>
+
+<div className="products">
+
+{filteredProducts.map(product=>(
+<div className="card" key={product.id}>
+
+<img src={product.image}/>
+
+<div className="card-content">
+
+<h3>{product.name}</h3>
+
+<div className="price">
+₹{product.price}
+</div>
+
+<button onClick={addToCart}>
+Add To Cart
+</button>
+
+</div>
+
+</div>
+))}
+
+</div>
+
+<footer>
+<h2>Amazon Clone Project</h2>
+
+</footer>
+</>
+);
+}
+
+ReactDOM.createRoot(
+document.getElementById("root")
+).render(<App />);
+
+</script>
+
+</body>
+</html>
